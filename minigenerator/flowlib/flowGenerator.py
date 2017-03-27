@@ -4,7 +4,6 @@ import threading
 import traceback
 import random
 from minigenerator.misc.unixSockets import UnixClient, UnixClientTCP
-from minigenerator.misc.utils import RawSocket
 from minigenerator.flowlib.tcp import sendFlowTCP
 from minigenerator.flowlib.udp import sendFlowUDP
 
@@ -212,55 +211,4 @@ def sendFlowNotifyController(**flow):
         client.sock.close()
 
 
-#LEARNING DATABASE UDP AND/OR TCP
-def sendRound(socket,destinations,rate,sport,dport,offset):
-
-    while rate > 0:
-        for destination,protocol in destinations[offset:]:
-            #send a udp or tcp packet depending on the protocols we use
-            socket.sendto(dst=destination,sport=sport,dport=dport,ttl=10,proto=protocol)
-            rate -=1
-            sport +=1
-            dport +=1
-            # reset the ports
-            if sport > 65535:
-                sport = 1500
-            if dport > 65535:
-                dport = 1500
-            if rate == 0:
-                break
-
-        #so we onlyoffset the first round
-        if offset != 0:
-            offset = 0
-
-    #we return the sport,dport we finished, then the last destination we sent,
-    #this is used in case rate is too low that we can not reach all the destinations
-    #in one round
-    offset = destinations.index((destination,protocol)) +1
-    return sport,dport, offset
-
-
-def keepSending(initialDestinations,rate,totalTime):
-
-    #This function handles the traffic generation for the learning process
-
-    sport = random.randint(1500,65535)
-    dport = random.randint(1500,65535)
-    raw_socket = RawSocket()
-
-    #serialize destinations so we do not have to do a double loop
-    destinations = []
-    for ip,protocols in initialDestinations:
-        for protocol in protocols:
-            destinations.append((ip,protocol))
-
-    #if rate is samller than the amount of hosts we set it to that value
-
-    startTime = time.time()
-    offset=0
-    while (time.time() - startTime < totalTime):
-        now = time.time()
-        sport,dport,offset= sendRound(raw_socket,destinations,rate,sport,dport,offset)
-        time.sleep(max(0,1-(time.time()-now)))
 

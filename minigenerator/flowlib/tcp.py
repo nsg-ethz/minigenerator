@@ -87,12 +87,6 @@ def recvFlowTCP(dport=5001):
     :return:
     """
 
-    #As an alternative nc can be used however that creates a child process
-
-    #subprocess.Popen(["nc", "-l", "-p", str(dport)], stdout=open(os.devnull, "w"))
-    #subprocess.Popen("nc -l -p {0} >/dev/null 2>&1".format(dport).split())
-    #return
-
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -114,7 +108,7 @@ def recvFlowTCP(dport=5001):
         else:
             s.close()
 
-def receiveNC(p):
+def receiveTCP_netcat(p):
     def signal_term_handler(signal,frame):
         p.kill()
         p.wait()

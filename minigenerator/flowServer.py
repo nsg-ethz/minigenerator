@@ -25,6 +25,8 @@ class Joiner(Thread):
     """
     Joiner class that tries to join (to avoid zombies)
     all the processes that are being queued into the queue.
+    Note that if you join a very long process, the rest have to wait
+    to be joined.
     """
     def __init__(self, q):
         super(Joiner,self).__init__()
@@ -40,76 +42,78 @@ class FlowServer(object):
 
     def __init__(self,name,topology,send_function,recv_function=recvFlowTCP):
 
-
+        ##
+        #SERVER NAME
         self.name = name
 
-        #sockets to receiver commands
-        #I WILL KEEP A UDP SOCKET AND TCP SOCKET LISTENING. UDP IS USED FOR SMALL THINGS, TCP IS ONLY USED WHEN THE
-        #OBJECT I WANT TO SEND CAN BE QUITE BIG
-        self.server = UnixServer(udp_server_address.format(name))
+        ##
+        #COMMUNICATION
+
+        #The flow server is listening to commands through several servers. We use unix sockets (that use the file system),
+        #due to mininet networks are typically lunched in a single machine sharing file system.
+        #One server listens to UDP packets (for small commands), while the other can handle big chunks of data using TCP.
 
         #we need a queue for events
-        self.server_queue = Queue.Queue(0)
+        self._server_queue = Queue.Queue(0)
 
-        #start TCP server that listens for events and queues them in the server_queue
-        self.server_tcp  = UnixServerTCP(udp_server_address.format(name),self.server_queue)
+        self._server = UnixServer(udp_server_address.format(name))
+        self._server_tcp = UnixServerTCP(udp_server_address.format(name), self._server_queue)
 
         #start UDP server thread
-        p = Thread(target=self.serverUDPListener,args=(self.server_queue,))
+        p = Thread(target=self._serverUDPListener,args=(self._server,self._server_queue,))
         p.setDaemon(True)
         p.start()
 
         #start tcp listener
+        # start TCP server that listens for events and queues them in the server_queue
         self.server_tcp.runThread()
 
-        ###########################################################
+        #TODO: add suport for AF_INET sockets
+
+        ##
+        #PROCESSES handling
 
         #Flow process containers
-        self.processes = []
-        self.processes_TCPServers = []
+        self._processes = []
+        self._processes_TCPServers = []
 
         #Singal handler
         signal.signal(signal.SIGTERM,self.signal_term_handler)
-        #signal.signal(signal.SIGCHLD,signal.SIG_IGN)
 
-        #PARENT PID
+        #Store process id. Used to differenciate the SIGTERM signal between the server and child processes.
         self.parentPid = os.getpid()
-        log.debug_high("First time p:{0},{1}".format(os.getppid(), os.getpid()))
+        log.debug_high("Parent pid and process pid:{0},{1}".format(os.getppid(), os.getpid()))
 
-        #topology
-        #Here you habve two options you can use my TopologyGraph object,
-        # or just a simple object that has the method getHostName(hostip)
 
-        #
-        # self.topology = TopologyGraph(loadNetworkGraph=True, getIfNames=False, getIfindexes=False, snmp=False,
-        #                          openFlowInformation=False, hostsMappings=True, interfaceToRouterName=False,
-        #                          db=os.path.join(tmp_files, db_topo))
-
+        ##
+        #TOPOLOGY
+        #TODO: explain how to use a topology object
         self.topology = topology
+
+        ##
+        #SEND AND RECEIVE FUNCTIONS
         self.send_funct = send_function
         self.recv_funct = recv_function
 
-        #start joiner
-        self.queue = Queue.Queue(maxsize=0)
-        joiner =Joiner(self.queue)
+        ##
+        #Start process joiner, keeps a queue with processes and tries to join them sequentially.
+        self._joiner_queue = Queue.Queue(maxsize=0)
+        joiner =Joiner(self._joiner_queue)
         joiner.setDaemon(True)
         joiner.start()
 
-        #tcp server application
-        self.TCPreceiver_type = "socket"
 
 
     #thread that listens for UDP events and queues them in the main queue
-    def serverUDPListener(self,queue):
+    def serverUDPListener(self,server,queue):
         while True:
-            event = self.server.receive()
+            event = server.receive()
             queue.put(event)
 
 
     def signal_term_handler(self,signal,frame):
         #only parent will do this
         if os.getpid() == self.parentPid:
-            #self.queue.put(None)
             self.server.close()
             self.server_tcp.close()
             os._exit(0)
@@ -126,26 +130,21 @@ class FlowServer(object):
                 import traceback
                 traceback.print_exc()
 
-
+        #send processes
         for process in self.processes:
-
             if process.is_alive():
                 try:
                     time.sleep(0.001)
                     process.terminate()
                     process.join()
                 except OSError:
-                    pass
+                    log.warning("Problem killing sender's processes")
 
+        #receive processes
         for process in self.processes_TCPServers:
-            if self.TCPreceiver_type != "nc":
-                process.terminate()
-                process.join()
-            else:
-                process.kill()
-                process.wait()
+            process.terminate()
+            process.join()
 
-        #kill nc processes
         self.processes_TCPServers = []
         self.processes = []
 
@@ -164,6 +163,26 @@ class FlowServer(object):
         self.processes.append(process)
         self.queue.put(process)
 
+
+
+    def startReceiveTCP(self,port):
+
+        """
+        Starts a TCP server that waits until a single sender connects,
+        transmits data, and closes the connection.
+
+        
+
+        :param port:
+        :return:
+        """
+
+        process = multiprocessing.Process(target=self.recv_funct,args=(int(port),))
+        process.daemon = True
+        process.start()
+
+        self.processes_TCPServers.append(process)
+        self.queue.put(process)
 
     def startFlowsBulck(self,flows,startingTime):
 
@@ -185,38 +204,6 @@ class FlowServer(object):
         self.scheduler_thread.setDaemon(True)
         self.scheduler_thread.start()
 
-
-
-
-
-    def startReceiveTCP(self,port):
-
-        """
-        Starts a TCP server that waits until a single sender connects,
-        transmits data, and closes the connection.
-
-        Different ways of listening tcp traffic have been considered. Net cat uses less cpu on average than our minimal
-        python implementation, however popen sometimes (when starting a big amount of flows gets stuck, could not find
-        the reason). Alternatively we use very simple TCP server implemented in pure python.
-
-        :param port:
-        :return:
-        """
-
-        if self.TCPreceiver_type == "nc":
-            os.system("nc -l -p {0} >/dev/null 2>&1 &".format(port))
-            #process = subprocess.Popen(["nc", "-l", port], stdout=open(os.devnull, "w"))
-            #process = subprocess.Popen("nc -l -p {port} &".format(port=port), stdout=open(os.devnull, "w"), shell=True)
-            #self.processes_TCPServers.append(process)
-            #self.queue.put(process)
-        else:
-            # start flow process
-            process = multiprocessing.Process(target=self.recv_funct,args=(int(port),))
-            process.daemon = True
-            process.start()
-
-            self.processes_TCPServers.append(process)
-            self.queue.put(process)
 
     def run(self):
 
