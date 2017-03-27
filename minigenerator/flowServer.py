@@ -2,16 +2,12 @@
 import sched
 import multiprocessing
 import time
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import traceback
 import signal
 import sys
 from threading import Thread
 import Queue
 
-from minigenerator import tmp_path as tmp_files
 from minigenerator import udp_server_address, tcp_server_address
 from minigenerator.misc.unixSockets import UnixServer, UnixServerTCP
 from minigenerator.flowlib.tcp import recvFlowTCP
@@ -57,7 +53,7 @@ class FlowServer(object):
         self._server_queue = Queue.Queue(0)
 
         self._server = UnixServer(udp_server_address.format(name))
-        self._server_tcp = UnixServerTCP(udp_server_address.format(name), self._server_queue)
+        self._server_tcp = UnixServerTCP(tcp_server_address.format(name), self._server_queue)
 
         #start UDP server thread
         p = Thread(target=self._serverUDPListener,args=(self._server,self._server_queue,))
@@ -83,7 +79,6 @@ class FlowServer(object):
         #Store process id. Used to differenciate the SIGTERM signal between the server and child processes.
         self.parentPid = os.getpid()
         log.debug_high("Parent pid and process pid:{0},{1}".format(os.getppid(), os.getpid()))
-
 
         ##
         #TOPOLOGY
@@ -127,7 +122,6 @@ class FlowServer(object):
             try:
                 self.scheduler_thread.kill()
             except Exception:
-                import traceback
                 traceback.print_exc()
 
         #send processes
@@ -142,8 +136,11 @@ class FlowServer(object):
 
         #receive processes
         for process in self.processes_TCPServers:
-            process.terminate()
-            process.join()
+            try:
+                process.terminate()
+                process.join()
+            except OSError:
+                log.warning("Problem killing receiver's processes")
 
         self.processes_TCPServers = []
         self.processes = []
@@ -152,7 +149,7 @@ class FlowServer(object):
 
         remoteServer = ""
         # add the host name into the flow that  is needed to generate TCP flows so the client starts the server
-        if flow["proto"] == "TCP":
+        if flow["proto"].upper() == "TCP":
             remoteServer= self.topology.getHostName(flow["dst"])
 
         # start flow process
@@ -170,7 +167,6 @@ class FlowServer(object):
         """
         Starts a TCP server that waits until a single sender connects,
         transmits data, and closes the connection.
-
         
 
         :param port:
@@ -217,6 +213,7 @@ class FlowServer(object):
             #Read event from the queue
             event = self.server_queue.get()
             self.server_queue.task_done()
+
 
             log.debug_medium("FlowServer({0}) -> Received event: {1}".format(self.name,str(event)))
 
