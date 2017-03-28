@@ -1,1 +1,2 @@
 #needed to add files that are not .py in our package (i.e templates, etc)
+recursive-include minigenerator/res *

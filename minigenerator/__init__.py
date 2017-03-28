@@ -12,8 +12,21 @@ except ImportError as e:
     sys.exit(1)
 
 
+import os
+import ConfigParser
+#path to the configuration directory
+RES= os.path.join(os.path.dirname(__file__),'res')
 
-tmp_path = '/tmp/'
-udp_server_address = tmp_path+"flowServer_{0}"
-tcp_server_address = tmp_path+"flowServer_tcp_{0}"
+CFG = ConfigParser.ConfigParser()
+
+with open(os.path.join(RES,'config.cfg'),'r') as f:
+    CFG.readfp(f)
+
+minigenerator_path = os.path.dirname(__file__)
+
+tmp_path = CFG.get("DEFAULT","tmp_path")
+udp_server_address = CFG.get("DEFAULT","udp_server_address")
+tcp_server_address = CFG.get("DEFAULT","tcp_server_address")
+evaluation_path =  CFG.get("DEFAULT","evaluation_path")
+
 

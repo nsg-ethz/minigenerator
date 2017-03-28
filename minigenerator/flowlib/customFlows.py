@@ -6,10 +6,12 @@ from minigenerator.misc.unixSockets import UnixClient, UnixClientTCP
 from minigenerator.flowlib.tcp import sendFlowTCP
 from minigenerator.flowlib.udp import sendFlowUDP
 
+from minigenerator import udp_server_address, evaluation_path
+
 
 #starting tcp server function
 def startTCPServer(host, dport):
-    flowClient = UnixClient("/tmp/flowServer_{0}")
+    flowClient = UnixClient(udp_server_address)
     flowClient.send({"type": "TCPServer", "port": dport}, host)
 
 # starting tcp server thread
@@ -20,9 +22,8 @@ class StartTCPServerThread(threading.Thread):
 
     def run(self):
         # sends command to the receiver flow server so it starts a TCP server to listen for the tcp flow.
-        flowClient = UnixClient("/tmp/flowServer_{0}")
+        flowClient = UnixClient(udp_server_address)
         flowClient.send({"type": "TCPServer", "port": self.tcp_data["dport"]}, self.tcp_data["host"])
-
 
 
 def sendFlowTCP_withServer(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",duration=0,host="h_0_0",**kwargs):
@@ -74,7 +75,7 @@ def sendFlowAndDetect(serverName, remoteServerName, **flow):
 
         elif flow["proto"] == "TCP":
 
-            file_name = lb.evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
+            file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
                                                                                     flow["dst"], flow["dport"])
             # save flow starting time
             with open(file_name, "w") as f:
@@ -130,7 +131,7 @@ def sendFlow(remoteServerName,**flow):
 
         elif flow["proto"] == "TCP":
 
-            file_name = lb.evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
+            file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
                                                                                     flow["dst"], flow["dport"])
             # save flow starting time
             with open(file_name, "w") as f:
