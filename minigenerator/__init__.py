@@ -25,6 +25,7 @@ with open(os.path.join(RES,'config.cfg'),'r') as f:
 minigenerator_path = os.path.dirname(__file__)
 
 tmp_path = CFG.get("DEFAULT","tmp_path")
+flow_server_name = CFG.get("DEFAULT","flow_server_name")
 udp_server_address = CFG.get("DEFAULT","udp_server_address")
 tcp_server_address = CFG.get("DEFAULT","tcp_server_address")
 evaluation_path =  CFG.get("DEFAULT","evaluation_path")

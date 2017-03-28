@@ -5,7 +5,7 @@ import traceback
 from minigenerator.misc.unixSockets import UnixClient, UnixClientTCP
 from minigenerator.flowlib.tcp import sendFlowTCP
 from minigenerator.flowlib.udp import sendFlowUDP
-
+from minigenerator.misc.utils import isTCP, isUDP
 from minigenerator import udp_server_address, evaluation_path
 
 
@@ -26,21 +26,22 @@ class StartTCPServerThread(threading.Thread):
         flowClient.send({"type": "TCPServer", "port": self.tcp_data["dport"]}, self.tcp_data["host"])
 
 
-def sendFlowTCP_withServer(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",duration=0,host="h_0_0",**kwargs):
+def sendFlowTCP_withServer(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",duration=0,dst_host_name="h_0_0",**kwargs):
 
     #start_server
     now = time.time()
 
-    tcp_data = {"host":host, "dport":dport}
+    tcp_data = {"host":dst_host_name, "dport":dport}
     tcp_thread = StartTCPServerThread(tcp_data)
     tcp_thread.setDaemon(True)
     tcp_thread.start()
     time.sleep(max(0, 1 - (time.time() - now)))
 
+    #start flow
     sendFlowTCP(dst=dst,sport=sport,dport=dport,size =size,rate=rate,duration=duration,**kwargs)
 
 
-def sendFlowAndDetect(serverName, remoteServerName, **flow):
+def sendFlowAndDetect(src_host_name, dst_host_name, **flow):
 
     """
     :param serverName:
@@ -49,14 +50,14 @@ def sendFlowAndDetect(serverName, remoteServerName, **flow):
     :return:
     """
 
-    client = UnixClientTCP("/tmp/flowDetection_{0}".format(serverName))
+    client = UnixClientTCP("/tmp/flowDetection_{0}".format(src_host_name))
     client_tg = UnixClientTCP("/tmp/trafficGenerator")
 
     try:
         # start server, this was done before in the function sendFlowTCP with server. I moved it here so I can start the server
         # and do the traceroute much earlier than before, even before notifying the flow to the controller.
-        if flow["proto"] == "TCP":
-            tcp_data = {"host": remoteServerName, "dport": flow["dport"]}
+        if isTCP(flow):
+            tcp_data = {"host": dst_host_name, "dport": flow["dport"]}
             startTCPServer(**tcp_data)
 
             # give time to the server to start listening
@@ -67,13 +68,13 @@ def sendFlowAndDetect(serverName, remoteServerName, **flow):
             client.send({"type": "startingFlow", "flow": flow}, "")
 
 
-        if flow["proto"] == "UDP":
+        if isUDP(flow):
 
             # time.sleep(max(0, 1 - (time.time() - now)))
             # start flow
             sendFlowUDP(**flow)
 
-        elif flow["proto"] == "TCP":
+        elif isTCP(flow):
 
             file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
                                                                                     flow["dst"], flow["dport"])
@@ -104,7 +105,7 @@ def sendFlowAndDetect(serverName, remoteServerName, **flow):
     finally:
         client.sock.close()
 
-def sendFlow(remoteServerName,**flow):
+def sendFlow(dst_host_name,**flow):
 
     """
     :param serverName:
@@ -116,30 +117,25 @@ def sendFlow(remoteServerName,**flow):
     try:
         # start server, this was done before in the function sendFlowTCP with server. I moved it here so I can start the server
         # and do the traceroute much earlier than before, even before notifying the flow to the controller.
-        if flow["proto"] == "TCP":
-            tcp_data = {"host": remoteServerName, "dport": flow["dport"]}
+        if isTCP(flow):
+            tcp_data = {"host": dst_host_name, "dport": flow["dport"]}
             startTCPServer(**tcp_data)
-
             # give time to the server to start listening
             time.sleep(1)
 
-        if flow["proto"] == "UDP":
+        if isUDP(flow):
 
-            # time.sleep(max(0, 1 - (time.time() - now)))
-            # start flow
             sendFlowUDP(**flow)
 
-        elif flow["proto"] == "TCP":
+        elif isTCP(flow):
 
             file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
                                                                                     flow["dst"], flow["dport"])
             # save flow starting time
             with open(file_name, "w") as f:
                 f.write(str(time.time()) + "\n")
-
+            #Start flow
             sendFlowTCP(**flow)
-
-            # save flow stopping time
             with open(file_name, "a") as f:
                 f.write(str(time.time()) + "\n")
 
@@ -160,9 +156,9 @@ def sendFlowNotifyController(**flow):
     try:
         # start server, this was done before in the function sendFlowTCP with server. I moved it here so I can start the server
         # and do the traceroute much earlier than before, even before notifying the flow to the controller.
-        if flow["proto"] == "TCP":
+        if isTCP(flow):
             now = time.time()
-            tcp_data = {"host": flow["host"], "dport": flow["dport"]}
+            tcp_data = {"host": flow["dst_host_name"], "dport": flow["dport"]}
             tcp_thread = StartTCPServerThread(tcp_data)
             tcp_thread.setDaemon(True)
             tcp_thread.start()
@@ -177,26 +173,14 @@ def sendFlowNotifyController(**flow):
         else:
             pass
 
-        if flow["proto"] == "UDP":
-
+        if isUDP(flow):
             time.sleep(max(0, 1 - (time.time() - now)))
             # start flow
             sendFlowUDP(**flow)
 
-        elif flow["proto"] == "TCP":
-
-            # sendFlowTCP_withServer(**flow)
-
-            # file_name = lb.lb_path+"/evaluation/flowDurations/{0}_{1}_{2}_{3}".format(flow["src"],flow["sport"],flow["dst"],flow["dport"])
-            # #save flow starting time
-            # with open(file_name,"w") as f:
-            #     f.write(str(time.time())+"\n")
-
+        elif isTCP(flow):
             sendFlowTCP(**flow)
 
-            # save flow stopping time
-            # with open(file_name,"a") as f:
-            #     f.write(str(time.time())+"\n")
 
         # send a stop notification to the controller for that elephant flow
         if flow["duration"] >= 20:

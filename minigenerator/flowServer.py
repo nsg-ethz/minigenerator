@@ -8,7 +8,7 @@ import sys
 from threading import Thread
 import Queue
 
-from minigenerator import udp_server_address, tcp_server_address
+from minigenerator import udp_server_address, tcp_server_address, flow_server_name
 from minigenerator.misc.unixSockets import UnixServer, UnixServerTCP
 from minigenerator.flowlib.tcp import recvFlowTCP
 from minigenerator.misc.utils import KThread
@@ -147,13 +147,11 @@ class FlowServer(object):
 
     def startFlow(self,flow):
 
-        remoteServer = ""
-        # add the host name into the flow that  is needed to generate TCP flows so the client starts the server
-        if flow["proto"].upper() == "TCP":
-            remoteServer= self.topology.getHostName(flow["dst"])
+        #we add some extra parameters that can be useful to flow: (sender and receiver names)
+        flow.update({"dst_host_name": self.topology.getHostName(flow["dst"]), "src_host_name":self.name})
 
         # start flow process
-        process = multiprocessing.Process(target=self.send_funct,args=(self.name,remoteServer), kwargs=(flow))
+        process = multiprocessing.Process(target=self.send_funct, kwargs=(flow))
         process.daemon = True
         process.start()
 
@@ -241,7 +239,7 @@ class FlowServer(object):
                 self.startFlowsBulck(flows,startingTime)
 
             else:
-                log.warning("unknown event {0}".format(event))
+                log.warning("Unknown event {0}".format(event))
 
 
 if __name__ == "__main__":
@@ -254,7 +252,7 @@ if __name__ == "__main__":
     name = sys.argv[1]
 
     #store the pid of the process so we can stop it when we stop the network
-    with open("/tmp/flowServer_{0}.pid".format(name),"w") as f:
+    with open(flow_server_name.format(name)+".pid","w") as f:
         f.write(str(os.getpid()))
 
     #setting logger level and initial message

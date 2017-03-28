@@ -50,6 +50,14 @@ def recvall(sock, n):
         data += packet
     return data
 
+def isTCP(flow):
+
+    return flow["proto"].upper() == "TCP"
+
+def isUDP(flow):
+
+    return flow["proto"].upper() == "UDP"
+
 
 class KThread(threading.Thread):
   """A subclass of threading.Thread, with a kill()

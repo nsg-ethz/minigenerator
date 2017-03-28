@@ -18,7 +18,7 @@ setup(
     version=VERSION,
     description='Simple traffic generator for mininet networks',
     author='Edgar Costa',
-    author_email='cedgar@student.ethz.ch',
+    author_email='cedgar@ethz.ch',
     packages=find_packages(),
     long_description=readme(),
     include_package_data = True,

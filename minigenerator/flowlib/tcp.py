@@ -78,7 +78,7 @@ def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",dur
         s.close()
 
 
-def recvFlowTCP(dport=5001):
+def recvFlowTCP(dport=5001,**kwargs):
 
     """
     Lisitens on port dport until a client connects sends data and closes the connection. All the received
@@ -108,7 +108,7 @@ def recvFlowTCP(dport=5001):
         else:
             s.close()
 
-def receiveTCP_netcat(p):
+def receiveTCP_netcat(dport=5001,**kwargs):
     def signal_term_handler(signal,frame):
         p.kill()
         p.wait()
@@ -116,7 +116,7 @@ def receiveTCP_netcat(p):
 
     signal.signal(signal.SIGTERM,signal_term_handler)
 
-    p = subprocess.Popen(["nc", "-l", str(p)], stdout=open(os.devnull, "w"))
+    p = subprocess.Popen(["nc", "-l", str(dport)], stdout=open(os.devnull, "w"))
     p.wait()
 
 
