@@ -2,7 +2,7 @@ import time
 import socket
 import threading
 import traceback
-from minigenerator.misc.unixSockets import UnixClient, UnixClientTCP
+from minigenerator.misc.unixsockets import UnixClient, UnixClientTCP
 from minigenerator.flowlib.tcp import sendFlowTCP
 from minigenerator.flowlib.udp import sendFlowUDP
 from minigenerator.misc.utils import isTCP, isUDP

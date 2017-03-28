@@ -9,7 +9,7 @@ from threading import Thread
 import Queue
 
 from minigenerator import udp_server_address, tcp_server_address, flow_server_name
-from minigenerator.misc.unixSockets import UnixServer, UnixServerTCP
+from minigenerator.misc.unixsockets import UnixServer, UnixServerTCP
 from minigenerator.flowlib.tcp import recvFlowTCP
 from minigenerator.misc.utils import KThread
 
@@ -83,7 +83,7 @@ class FlowServer(object):
         ##
         #TOPOLOGY
         #TODO: explain how to use a topology object
-        self.topology = topology
+        self.topology = topology()
 
         ##
         #SEND AND RECEIVE FUNCTIONS
@@ -247,9 +247,19 @@ if __name__ == "__main__":
     import os
     from minigenerator.logger import log
     import logging
-
-
     name = sys.argv[1]
+
+    _topology = sys.argv[2]
+    _send = sys.argv[3]
+    _recv = sys.argv[4]
+
+    import importlib
+
+    #TODO: this fix topologies and send recv functions to be defined always in the same file, should make this flexible
+    topology = getattr(importlib.import_module("minigenerator.misc.topology"),_topology)
+    send_function = getattr(importlib.import_module("minigenerator.flowlib.customflows"),_send)
+    recv_function = getattr(importlib.import_module("minigenerator.flowlib.customflows"),_recv)
+
 
     #store the pid of the process so we can stop it when we stop the network
     with open(flow_server_name.format(name)+".pid","w") as f:
@@ -260,4 +270,4 @@ if __name__ == "__main__":
     log.info("Starting Flows Server {0}".format(name))
 
 
-    FlowServer(name).run()
+    FlowServer(name,topology,send_function,recv_function).run()
