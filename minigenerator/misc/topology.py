@@ -21,31 +21,26 @@ class TopologyDB(object):
             dict keyed by - properties -> val
                           - neighbor   -> interface properties
         """
-
-        if not db and not net:
-            log.warning('Topology instantiated without any data')
-
         self._network = {}
 
-        #same topology from another point of view
-        self._network_node_to_node = {}
-
-        if db:
-            self.load(db)
         if net:
             self.parse_net(net)
+
+        elif db:
+            self.load(db)
+
+        else:
+            log.warning('Topology instantiated without any data')
 
     def load(self, fpath):
         """Load a topology database from the given filename"""
         with open(fpath, 'r') as f:
-            networks = json.load(f)
-            self._network = networks["network"]
-            self._network_node_to_node = networks["network_node_to_node"]
+            self._network = json.load(f)
 
     def save(self, fpath):
         """Save the topology database to the given filename"""
         with open(fpath, 'w') as f:
-            json.dump({"network":self._network,"network_node_to_node":self._network_node_to_node}, f)
+            json.dump(self._network, f)
 
     def _node(self, x):
         try:
@@ -71,25 +66,21 @@ class TopologyDB(object):
 
     def setRouterId(self, x):
         """Return the OSPF router id for node named x"""
-        router = self.network[x]
+        router = self._network[x]
         if router['type'] != 'router':
             raise TypeError('%s is not a router' % x)
 
-        if self.network.has_key('sw-mon'):
-            routerId = self.interfaceIP(x,x+"-mon")
-        else:
-            routerId = router['routerid']
-        return routerId
+        return router.get('routerid')
 
     def getRouterId(self,x):
 
-        router = self.network[x]
+        router = self._network[x]
         if router['type'] != 'router':
             raise TypeError('%s is not a router' % x)
 
         return router['routerid']
 
-    def interfaceIP(self,router,interface):
+    def interfaceIP(self,node,interface):
 
         """
         Returns the interface IP of a routers
@@ -97,8 +88,8 @@ class TopologyDB(object):
         :param switch:
         :return:
         """
-
-        return self._interface(router,interface)['ip'].split("/")[0]
+        connected_to = self._network[node]["interfaces_to_node"][interface]
+        return self._interface(node,connected_to)['ip'].split("/")[0]
 
 
     def type(self,node):
@@ -126,27 +117,24 @@ class TopologyDB(object):
 
     def _add_node(self, n, props):
         """Register a network node"""
-        props2 = {}
-        props2.update(props)
+
+        interfaces_to_nodes = {}
 
         for itf in n.intfList():
             nh = TopologyDB.otherIntf(itf)
             if not nh:
                 continue  # Skip loopback and the likes
-            props[itf.name] = {
-                'ip': '%s/%s' % (itf.ip, itf.prefixLen),
-                'mac' : '%s' % (itf.mac),
-                'connectedTo': nh.node.name,
-                'bw': itf.params.get('bw', -1)
-            }
-            props2[nh.node.name] = {
+
+            props[nh.node.name] = {
                 'ip': '%s/%s' % (itf.ip, itf.prefixLen),
                 'mac' : '%s' % (itf.mac),
                 'intf': itf.name,
                 'bw': itf.params.get('bw', -1)
             }
-        self.network_node_to_node[n.name] = props2
-        self.network[n.name] = props
+            interfaces_to_nodes[itf.name] = nh.node.name
+        #add an interface to node mapping that can be useful
+        props['interfaces_to_node'] = interfaces_to_nodes
+        self._network[n.name] = props
 
     def add_host(self, n):
         """Register an host"""
@@ -164,9 +152,10 @@ class TopologyDB(object):
         """Register an router"""
         self._add_node(n, {'type': 'router',
                            'routerid': n.id})
-
         #we overrite the router id using our own function.
-        self.network[n.name]["routerid"] = self.setRouterId(n.name)
+        self._network[n.name]["routerid"] = self.setRouterId(n.name)
+
+
 
 class NetworkGraph(object):
     def __init__(self, topologyDB):

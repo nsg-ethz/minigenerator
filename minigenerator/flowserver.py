@@ -8,7 +8,7 @@ import sys
 from threading import Thread
 import Queue
 
-from minigenerator import udp_server_address, tcp_server_address, flow_server_name
+from minigenerator import udp_server_address, tcp_server_address, flow_server_name, topology_path
 from minigenerator.misc.unixsockets import UnixServer, UnixServerTCP
 from minigenerator.flowlib.tcp import recvFlowTCP
 from minigenerator.misc.utils import KThread
@@ -83,7 +83,7 @@ class FlowServer(object):
         ##
         #TOPOLOGY
         #TODO: explain how to use a topology object
-        self.topology = topology()
+        self.topology = topology(db=topology_path)
 
         ##
         #SEND AND RECEIVE FUNCTIONS

@@ -1,9 +1,9 @@
 import time
-import socket
 import threading
 import traceback
+import copy
 from minigenerator.misc.unixsockets import UnixClient, UnixClientTCP
-from minigenerator.flowlib.tcp import sendFlowTCP
+from minigenerator.flowlib.tcp import sendFlowTCP, recvFlowTCP
 from minigenerator.flowlib.udp import sendFlowUDP
 from minigenerator.misc.utils import isTCP, isUDP
 from minigenerator import udp_server_address, evaluation_path
@@ -41,71 +41,28 @@ def sendFlowTCP_withServer(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",ra
     sendFlowTCP(dst=dst,sport=sport,dport=dport,size =size,rate=rate,duration=duration,**kwargs)
 
 
-def sendFlowAndDetect(src_host_name, dst_host_name, **flow):
+def store_duration(function):
 
     """
-    :param serverName:
-    :param remoteServerName:
-    :param flow:
-    :return:
+    Decorates a sendflow and stores the duration of the flow.
+    :param function: 
+    :return: 
     """
+    
+    def wrapper(*args,**kwargs):
+        file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(kwargs["src"], kwargs["sport"],
+                                                                                    kwargs["dst"], kwargs["dport"])
+        # save flow starting time
+        now =time.time()
+        res = function(*args,**kwargs)
+        with open(file_name, "a") as f:
+            f.write(str(time.time()-now) + "\n")
+        return res
 
-    client = UnixClientTCP("/tmp/flowDetection_{0}".format(src_host_name))
-    client_tg = UnixClientTCP("/tmp/trafficGenerator")
-
-    try:
-        # start server, this was done before in the function sendFlowTCP with server. I moved it here so I can start the server
-        # and do the traceroute much earlier than before, even before notifying the flow to the controller.
-        if isTCP(flow):
-            tcp_data = {"host": dst_host_name, "dport": flow["dport"]}
-            startTCPServer(**tcp_data)
-
-            # give time to the server to start listening
-            time.sleep(1)
-
-        # nofity flow detector if elephant
-        if flow["duration"] >= 20:
-            client.send({"type": "startingFlow", "flow": flow}, "")
+    return wrapper
 
 
-        if isUDP(flow):
-
-            # time.sleep(max(0, 1 - (time.time() - now)))
-            # start flow
-            sendFlowUDP(**flow)
-
-        elif isTCP(flow):
-
-            file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
-                                                                                    flow["dst"], flow["dport"])
-            # save flow starting time
-            with open(file_name, "w") as f:
-                f.write(str(time.time()) + "\n")
-
-            sendFlowTCP(**flow)
-
-            # save flow stopping time
-            with open(file_name, "a") as f:
-                f.write(str(time.time()) + "\n")
-
-        # send a stop notification to the controller for that elephant flow
-        if flow["duration"] >= 20:
-            client.sendAndClose({"type": "stoppingFlow", "flow": flow}, "")
-
-            #NOTIFY TRAFFIC GENERATOR REMOVE IF YOU DONT USE THAT
-            try:
-                client_tg.sendAndClose("stoppingFlow", "")
-            except socket.errno:
-                pass
-
-    except Exception:
-        traceback.print_exc()
-        pass
-
-    finally:
-        client.sock.close()
-
-def sendFlow(dst_host_name,**flow):
+def send_flow(dst_host_name,**flow):
 
     """
     :param serverName:
@@ -128,17 +85,8 @@ def sendFlow(dst_host_name,**flow):
             sendFlowUDP(**flow)
 
         elif isTCP(flow):
-
-            file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
-                                                                                    flow["dst"], flow["dport"])
-            # save flow starting time
-            with open(file_name, "w") as f:
-                f.write(str(time.time()) + "\n")
             #Start flow
             sendFlowTCP(**flow)
-            with open(file_name, "a") as f:
-                f.write(str(time.time()) + "\n")
-
     except Exception:
         traceback.print_exc()
         pass
@@ -146,53 +94,50 @@ def sendFlow(dst_host_name,**flow):
     finally:
         pass
 
-# FUNCTION THAT SENDS FLOWS HERE WE SPECIFY IF ITS TCP OR UDP
-def sendFlowNotifyController(**flow):
-    # store time so we sleep 1 seconds - time needed for the following commands
-    now = time.time()
+def send_flow_store_duration(dst_host_name,**flow):
 
-    client = UnixClient("/tmp/controllerServer")
+    """
+    :param serverName:
+    :param remoteServerName:
+    :param flow:
+    :return:
+    """
 
     try:
         # start server, this was done before in the function sendFlowTCP with server. I moved it here so I can start the server
         # and do the traceroute much earlier than before, even before notifying the flow to the controller.
         if isTCP(flow):
-            now = time.time()
-            tcp_data = {"host": flow["dst_host_name"], "dport": flow["dport"]}
-            tcp_thread = StartTCPServerThread(tcp_data)
-            tcp_thread.setDaemon(True)
-            tcp_thread.start()
-
-        # nofity the controler if elephant
-        if flow["duration"] >= 20:
-            # notify controller that a flow will start
-            # we wait so we have time to get the traceroute data
-            time.sleep(max(0, 1 - (time.time() - now)))
-            client.send({"type": "startingFlow", "flow": flow}, "")
-
-        else:
-            pass
+            tcp_data = {"host": dst_host_name, "dport": flow["dport"]}
+            startTCPServer(**tcp_data)
+            # give time to the server to start listening
+            time.sleep(1)
 
         if isUDP(flow):
-            time.sleep(max(0, 1 - (time.time() - now)))
-            # start flow
+
             sendFlowUDP(**flow)
 
         elif isTCP(flow):
+            #Start flow
+            file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(flow["src"], flow["sport"],
+                                                                                    flow["dst"], flow["dport"])
+            # save flow starting time
+            now =time.time()
             sendFlowTCP(**flow)
-
-
-        # send a stop notification to the controller for that elephant flow
-        if flow["duration"] >= 20:
-            client.send({"type": "stoppingFlow", "flow": flow}, "")
+            with open(file_name, "w") as f:
+                f.write(str(time.time()-now) + "\n")
+                sendFlowTCP(**flow)
 
     except Exception:
-
         traceback.print_exc()
         pass
 
     finally:
-        client.sock.close()
+        pass
+
+def recv_flow(*args,**kwargs):
+    recvFlowTCP(*args,**kwargs)
+
+
 
 
 
