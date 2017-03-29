@@ -14,6 +14,8 @@ except ImportError as e:
 
 import os
 import ConfigParser
+import pkgutil
+
 #path to the configuration directory
 RES= os.path.join(os.path.dirname(__file__),'res')
 
@@ -23,7 +25,10 @@ with open(os.path.join(RES,'config.cfg'),'r') as f:
     CFG.readfp(f)
 
 minigenerator_path = os.path.dirname(__file__)
+flowserver_path= pkgutil.get_loader("minigenerator.flowserver").filename
 
+
+#loads configurations
 tmp_path = CFG.get("DEFAULT","tmp_path")
 topology_path =CFG.get("DEFAULT","topology_path")
 flow_server_name = CFG.get("DEFAULT","flow_server_name")

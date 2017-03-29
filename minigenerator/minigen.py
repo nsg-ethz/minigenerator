@@ -1,5 +1,10 @@
 from minigenerator.misc.topology import TopologyDB
-from minigenerator import topology_path
+from minigenerator.misc.unixsockets import UnixClient
+from minigenerator.misc.utils import read_pid, del_file
+from minigenerator import topology_path, flowserver_path, \
+                                      udp_server_address, \
+                                      flow_server_name, \
+                                      tcp_server_address
 
 import mininet.log as l
 l.setLogLevel('info')
@@ -12,6 +17,9 @@ class Minigenerator(object):
 
         self.mininet = net
         self.load_topodb(net=net,stored_topology=stored_topology)
+        self._topology = topology_type
+        self._send_funct = send_function
+        self._recv_funct = recv_function
 
 
     def load_topodb(self,net,stored_topology):
@@ -19,13 +27,39 @@ class Minigenerator(object):
         TopologyDB(net=net,db=stored_topology).save(topology_path)
 
     def start(self):
-
+        log.info('*** Starting Minigenerator Servers')
         for host in self.mininet.hosts:
-            cmd = ""
+            cmd = flowserver_path+" {0} {1} {2} {3}".format(host.name,
+                                                            self._topology,
+                                                            self._send_funct,
+                                                            self._recv_funct)
+            #lunches flowserver
             host.cmd(cmd)
 
     def stop(self):
-        pass
+        log.info('*** Stopping Minigenerator Servers')
 
+        client = UnixClient(udp_server_address)
 
+        for host in self.mininet.hosts:
 
+            #send a termiante command so all the ongoing flows are gracefully
+            #sends a command to the server to kill it
+            client.send({"type":"softKill"},host.name)
+
+            #in case that this does not work we try with the pid and kill -9
+
+            #read flowserver pid
+            pid = read_pid(flow_server_name.format(host.name)+".pid")
+
+            if pid:
+                log.debug('Killing Flow Server at host : {0}'.format(host.name))
+                host.cmd('kill','-9', pid)
+
+            #we erase all the possible files created by the server
+            #pid file
+            del_file(flow_server_name.format(host.name)+".pid")
+            #udp unix socket server
+            del_file(udp_server_address.format(host.name))
+            #tcp unix socket server
+            del_file(tcp_server_address.format(host.name))

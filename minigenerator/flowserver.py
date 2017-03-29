@@ -62,7 +62,7 @@ class FlowServer(object):
 
         #start tcp listener
         # start TCP server that listens for events and queues them in the server_queue
-        self.server_tcp.runThread()
+        self._server_tcp.runThread()
 
         #TODO: add suport for AF_INET sockets
 
@@ -83,7 +83,7 @@ class FlowServer(object):
         ##
         #TOPOLOGY
         #TODO: explain how to use a topology object
-        self.topology = topology(db=topology_path)
+        self._topology = topology(db=topology_path)
 
         ##
         #SEND AND RECEIVE FUNCTIONS
@@ -105,13 +105,17 @@ class FlowServer(object):
             event = server.receive()
             queue.put(event)
 
+    def clean_server(self):
+
+        self._server.close()
+        self._server_tcp.close()
+        os._exit(0)
+
 
     def signal_term_handler(self,signal,frame):
         #only parent will do this
         if os.getpid() == self.parentPid:
-            self.server.close()
-            self.server_tcp.close()
-            os._exit(0)
+            self.clean_server()
         else:
             os._exit(0)
 
@@ -237,6 +241,10 @@ class FlowServer(object):
 
                 #schedule all the flows
                 self.startFlowsBulck(flows,startingTime)
+
+            elif event["type"] == "softKill":
+                self.terminateALL()
+                self.clean_server()
 
             else:
                 log.warning("Unknown event {0}".format(event))

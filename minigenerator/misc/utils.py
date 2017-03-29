@@ -5,6 +5,24 @@ import os
 import threading
 import sys
 
+def read_pid(file_name):
+    """
+    Extract a pid from a file
+    :param n: path to a file
+    :return: pid as a string
+    """
+    try:
+        with open(file_name, 'r') as f:
+            return str(f.read()).strip(' \n\t')
+    except:
+        return None
+
+def del_file(f):
+    try:
+        os.remove(f)
+    except OSError:
+        pass
+
 def setSizeToInt(size):
     """" Converts the sizes string notation to the corresponding integer
     (in bytes).  Input size can be given with the following

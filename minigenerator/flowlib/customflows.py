@@ -48,7 +48,7 @@ def store_duration(function):
     :param function: 
     :return: 
     """
-    
+
     def wrapper(*args,**kwargs):
         file_name = evaluation_path + "flowDurations/{0}_{1}_{2}_{3}".format(kwargs["src"], kwargs["sport"],
                                                                                     kwargs["dst"], kwargs["dport"])
