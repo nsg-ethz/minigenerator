@@ -94,7 +94,7 @@ class TopologyDB(object):
 
     def type(self,node):
 
-        return self.network[node]['type']
+        return self._network[node]['type']
 
     @staticmethod
     def otherIntf(intf):
@@ -160,7 +160,6 @@ class TopologyDB(object):
                            'routerid': n.id})
         #we overrite the router id using our own function.
         self._network[n.name]["routerid"] = self.setRouterId(n.name)
-
 
 
 class NetworkGraph(object):
@@ -527,8 +526,6 @@ class TopologyGraph(TopologyDB):
         # new links or devices can not bee added.
 
         self.original_network = copy.deepcopy(self._network)
-        self.original_network_node_to_node = copy.deepcopy(self._network_node_to_node)
-
 
         if loadNetworkGraph:
             self.networkGraph = NetworkGraph(self)

@@ -9,6 +9,7 @@ from minigenerator import topology_path, flowserver_path, \
 import mininet.log as l
 l.setLogLevel('info')
 log = l.lg
+import sys
 
 class Minigenerator(object):
 
@@ -29,12 +30,12 @@ class Minigenerator(object):
     def start(self):
         log.info('*** Starting Minigenerator Servers\n')
         for host in self.mininet.hosts:
-            cmd = flowserver_path+" {0} {1} {2} {3} &".format(host.name,
+            cmd = flowserver_path+" {0} {1} {2} {3}".format(host.name,
                                                             self._topology,
                                                             self._send_funct,
                                                             self._recv_funct)
             #lunches flowserver
-            host.cmdPrint(cmd)
+            host.popen(cmd,stdout=sys.stdout, stderr=sys.stdout)
 
     def stop(self):
         log.info('*** Stopping Minigenerator Servers\n')

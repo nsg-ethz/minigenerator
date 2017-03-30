@@ -100,7 +100,7 @@ class FlowServer(object):
 
 
     #thread that listens for UDP events and queues them in the main queue
-    def serverUDPListener(self,server,queue):
+    def _serverUDPListener(self,server,queue):
         while True:
             event = server.receive()
             queue.put(event)
