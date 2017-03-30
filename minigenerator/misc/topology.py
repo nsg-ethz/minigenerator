@@ -138,7 +138,13 @@ class TopologyDB(object):
 
     def add_host(self, n):
         """Register an host"""
-        self._add_node(n, {'type': 'host','gateway':n.gateway})
+        attributes = {'type': 'host'}
+        #n.gateway attribute only exists in my custom mininet
+        if hasattr(n,"gateway"):
+            attributes.update({'gateway':n.gateway})
+        elif 'defaultRoute' in n.params:
+            attributes.update({'gateway':n.params['defaultRoute']})
+        self._add_node(n, attributes)
 
     def add_controller(self, n):
         """Register an controller"""
@@ -643,6 +649,7 @@ class TopologyGraph(TopologyDB):
         if host not in self._network:
             raise HostDoesNotExist("{0} does not exist".format(host))
 
+        #TODO: not all hosts have gateways
         return self._network[host]["gateway"]
 
     def totalNumberOfPaths(self):

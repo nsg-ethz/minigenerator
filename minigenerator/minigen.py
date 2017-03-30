@@ -27,17 +27,17 @@ class Minigenerator(object):
         TopologyDB(net=net,db=stored_topology).save(topology_path)
 
     def start(self):
-        log.info('*** Starting Minigenerator Servers')
+        log.info('*** Starting Minigenerator Servers\n')
         for host in self.mininet.hosts:
-            cmd = flowserver_path+" {0} {1} {2} {3}".format(host.name,
+            cmd = flowserver_path+" {0} {1} {2} {3} &".format(host.name,
                                                             self._topology,
                                                             self._send_funct,
                                                             self._recv_funct)
             #lunches flowserver
-            host.cmd(cmd)
+            host.cmdPrint(cmd)
 
     def stop(self):
-        log.info('*** Stopping Minigenerator Servers')
+        log.info('*** Stopping Minigenerator Servers\n')
 
         client = UnixClient(udp_server_address)
 

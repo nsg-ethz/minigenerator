@@ -6,14 +6,15 @@ from mininet.util import custom
 from mininet.link import TCIntf
 from minigenerator.minigen import Minigenerator
 from minigenerator.cli import MiniGeneratorCLI
+from mininet.cli import CLI
+from mininet.clean import cleanup
 
 class ExampleTopo(Topo):
-
 
     def build( self, **_opts ):
 
         #add linux bridges
-        s1, s2, s3 = [ self.addSwitch( s,cls=LinuxBridge ) for s in ( 's1', 's2', 's3' ) ]
+        s1, s2, s3 = [ self.addSwitch( s,cls=LinuxBridge,stp=False ) for s in ( 's1', 's2', 's3' ) ]
 
         #add 6 hosts (2 per switch)
         h_11, h_12 = [self.addHost(name) for name in ('h_11', 'h_12')]
@@ -22,7 +23,7 @@ class ExampleTopo(Topo):
 
         #interconnect switches in a triangle
         self.addLink(s1, s2)
-        self.addLink(s1, s3)
+        #self.addLink(s1, s3)
         self.addLink(s2, s3)
 
         #connect hosts to switch
@@ -40,11 +41,14 @@ class ExampleTopo(Topo):
 
 def main():
 
+
+    cleanup()
+
     topo = ExampleTopo()
 
     intf = custom(TCIntf, bw =100)
 
-    net = Mininet(topo=topo,intf=intf)
+    net = Mininet(topo=topo,intf=intf,controller=None)
 
     info("*** Starting topology\n")
     net.start()
@@ -54,7 +58,8 @@ def main():
 
     minigen.start()
 
-    MiniGeneratorCLI(net)
+    CLI(net)
+    #MiniGeneratorCLI(net)
 
     info("*** Stoping minigen and network\n")
     minigen.stop()
