@@ -4,10 +4,8 @@
 build
 dist
 *.egg-info
-dynamips_*
 ilt_*
 *_rom
-*_rommon_vars
 *_slot*
 *_ssa
 *_lock
@@ -18,7 +16,6 @@ ilt_*
 *.snm
 *.out
 *.nav
-lab_comment.pdf
 *.log
 *.fls
 *fdb_latexmk

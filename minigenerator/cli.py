@@ -7,7 +7,7 @@ class MiniGeneratorCLI(CLI):
 
     def do_minigenerator(self,line=""):
         """A  """
-
+        pass
 
 
     def do_stoprouter(self,line=""):
