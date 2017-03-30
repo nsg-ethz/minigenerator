@@ -3,7 +3,6 @@ from ipaddress import ip_interface
 from minigenerator.logger import log
 from minigenerator.misc import InvalidIP, HostDoesNotExist
 import networkx as nx
-
 import copy
 
 class TopologyDB(object):
@@ -47,6 +46,10 @@ class TopologyDB(object):
             return self._network[x]
         except KeyError:
             raise ValueError('No node named %s in the network' % x)
+
+    def __getitem__(self, item):
+
+        return self._node(item)
 
     def _interface(self, x, y):
         return self._network[x][y]
@@ -515,10 +518,10 @@ class NetworkGraph(object):
         return [x for x in allEdges if not (any("sw" in s for s in x) or any("ovs" in s for s in x))]
 
 
-class TopologyGraph(TopologyDB):
+class Topology(TopologyDB):
     def __init__(self, loadNetworkGraph=True,hostsMappings=True, *args, **kwargs):
 
-        super(TopologyGraph, self).__init__(*args, **kwargs)
+        super(Topology, self).__init__(*args, **kwargs)
 
         # save network startup state
         # in case of link removal we use this objects to remember the state of links and nodes before removal
@@ -527,13 +530,56 @@ class TopologyGraph(TopologyDB):
 
         self.original_network = copy.deepcopy(self._network)
 
-        if loadNetworkGraph:
-            self.networkGraph = NetworkGraph(self)
+        # if loadNetworkGraph:
+        #     self.networkGraph = NetworkGraph(self)
 
         #loads hosts to ip and ip to hosts mappings
         self.hostsIpMapping = {}
         if hostsMappings:
             self.hostsIpMappings()
+
+
+    def hostsIpMappings(self):
+
+        """
+        Creates a mapping between host names and ip and viceversa
+        :return:
+        """
+
+        self.hostsIpMapping = {}
+        hosts = self.getHosts()
+        self.hostsIpMapping["ipToName"] = {}
+        self.hostsIpMapping["nameToIp"] = {}
+        for host in hosts:
+            ip = self.interfaceIP(host,"{0}-eth0".format(host))
+            self.hostsIpMapping["ipToName"][ip] = host
+            self.hostsIpMapping["nameToIp"][host] = ip
+
+    def getHostName(self, ip):
+
+        """
+        Returns the host name of the host that has the ip address
+        :param ip:
+        :return:
+        """
+        name = self.hostsIpMapping.get("ipToName").get(ip)
+        if name:
+            return name
+        raise InvalidIP("Any host of the network has the ip {0}".format(ip))
+
+    def getHostIp(self, name):
+
+        """
+        returns the ip of host name
+        :param name:
+        :return:
+        """
+
+        ip = self.hostsIpMapping.get("nameToIp").get(name)
+        if ip:
+            return ip
+        raise HostDoesNotExist("Any host of the network has the name {0}".format(name))
+
 
     def getNeighbors(self, node):
 
@@ -848,47 +894,20 @@ class TopologyGraph(TopologyDB):
         return self._network[node]["type"] == "switch" and node[:3] == "ovs"
 
 
-    def hostsIpMappings(self):
 
-        """
-        Creates a mapping between host names and ip and viceversa
-        :return:
-        """
+class FatTree(Topology):
 
-        self.hostsIpMapping = {}
-        hosts = self.getHosts()
-        self.hostsIpMapping["ipToName"] = {}
-        self.hostsIpMapping["nameToIp"] = {}
-        for host in hosts:
-            self.hostsIpMapping["ipToName"][(hosts[host]["%s-eth0" % (host)]["ip"]).split("/")[0]] = host
-            self.hostsIpMapping["nameToIp"][host] = (hosts[host]["%s-eth0" % (host)]["ip"]).split("/")[0]
+    """
+    Fat tree topology functionalities: Assumes that naming as follows: 
+    hosts: h_podnum_number -> h_0_0
+    edge sw/router: s/r_podnum_e(number) -> s/r_0_e0
+    aggregation sw/router: s/r_podnum_a(number) -> s/r_0_a0
+    core sw/router s/r_c(number) -> r_c0/s_c0
+    """
+
+    def __init__(self):
+        pass
 
     def getPod(self, name):
 
         return name.split("_")[1]
-
-    def getHostName(self, ip):
-
-        """
-        Returns the host name of the host that has the ip address
-        :param ip:
-        :return:
-        """
-        name = self.hostsIpMapping.get("ipToName").get(ip)
-        if name:
-            return name
-        raise InvalidIP("Any host of the network has the ip {0}".format(ip))
-
-    def getHostIp(self, name):
-
-        """
-        returns the ip of host name
-        :param name:
-        :return:
-        """
-
-        ip = self.hostsIpMapping.get("nameToIp").get(name)
-        if ip:
-            return ip
-        raise HostDoesNotExist("Any host of the network has the name {0}".format(name))
-

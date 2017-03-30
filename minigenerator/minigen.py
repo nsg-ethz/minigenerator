@@ -9,11 +9,11 @@ from minigenerator import topology_path, flowserver_path, \
 import mininet.log as l
 l.setLogLevel('info')
 log = l.lg
-import sys
+import sys, time
 
 class Minigenerator(object):
 
-    def __init__(self,net=None, stored_topology=None, topology_type="TopologyGraph",
+    def __init__(self,net=None, stored_topology=None, topology_type="Topology",
                  send_function="send_flow",recv_function="recv_flow",*args,**kwargs):
 
         self.mininet = net
@@ -48,8 +48,9 @@ class Minigenerator(object):
             #sends a command to the server to kill it
             client.send({"type":"softKill"},host.name)
 
-            #in case that this does not work we try with the pid and kill -9
-
+        time.sleep(0.5)
+        #in case that this does not work we try with the pid and kill -9
+        for host in self.mininet.hosts:
             #read flowserver pid
             pid = read_pid(flow_server_name.format(host.name)+".pid")
 

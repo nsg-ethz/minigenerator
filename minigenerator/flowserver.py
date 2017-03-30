@@ -106,7 +106,6 @@ class FlowServer(object):
             queue.put(event)
 
     def clean_server(self):
-
         self._server.close()
         self._server_tcp.close()
         os._exit(0)
@@ -129,7 +128,7 @@ class FlowServer(object):
                 traceback.print_exc()
 
         #send processes
-        for process in self.processes:
+        for process in self._processes:
             if process.is_alive():
                 try:
                     time.sleep(0.001)
@@ -139,28 +138,28 @@ class FlowServer(object):
                     log.warning("Problem killing sender's processes")
 
         #receive processes
-        for process in self.processes_TCPServers:
+        for process in self._processes_TCPServers:
             try:
                 process.terminate()
                 process.join()
             except OSError:
                 log.warning("Problem killing receiver's processes")
 
-        self.processes_TCPServers = []
-        self.processes = []
+        self._processes_TCPServers = []
+        self._processes = []
 
     def startFlow(self,flow):
 
         #we add some extra parameters that can be useful to flow: (sender and receiver names)
-        flow.update({"dst_host_name": self.topology.getHostName(flow["dst"]), "src_host_name":self.name})
+        flow.update({"dst_host_name": self._topology.getHostName(flow["dst"]), "src_host_name":self.name})
 
         # start flow process
         process = multiprocessing.Process(target=self.send_funct, kwargs=(flow))
         process.daemon = True
         process.start()
 
-        self.processes.append(process)
-        self.queue.put(process)
+        self._processes.append(process)
+        self._joiner_queue.put(process)
 
 
 
@@ -179,8 +178,8 @@ class FlowServer(object):
         process.daemon = True
         process.start()
 
-        self.processes_TCPServers.append(process)
-        self.queue.put(process)
+        self._processes_TCPServers.append(process)
+        self._joiner_queue.put(process)
 
     def startFlowsBulck(self,flows,startingTime):
 
@@ -213,9 +212,8 @@ class FlowServer(object):
         while True:
 
             #Read event from the queue
-            event = self.server_queue.get()
-            self.server_queue.task_done()
-
+            event = self._server_queue.get()
+            self._server_queue.task_done()
 
             log.debug_medium("FlowServer({0}) -> Received event: {1}".format(self.name,str(event)))
 
