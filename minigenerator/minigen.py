@@ -21,47 +21,63 @@ class Minigenerator(object):
         self._topology = topology_type
         self._send_funct = send_function
         self._recv_funct = recv_function
+        self._client = UnixClient(udp_server_address)
 
 
     def load_topodb(self,net,stored_topology):
 
         TopologyDB(net=net,db=stored_topology).save(topology_path)
 
+    def start_node(self, node):
+        host = self.mininet.getNodeByName(node)
+        cmd = flowserver_path + " {0} {1} {2} {3}".format(host.name,
+                                                          self._topology,
+                                                          self._send_funct,
+                                                          self._recv_funct)
+        # lunches flowserver
+        host.popen(cmd, stdout=sys.stdout, stderr=sys.stdout)
+
+    def stop_node(self,node):
+
+        host = self.mininet.getNodeByName(node)
+
+        #send a termiante command so all the ongoing flows are gracefully
+        #sends a command to the server to kill it
+        self._client.send({"type":"softKill"},host.name)
+
+        #in case that this does not work we try with the pid and kill -9
+        #read flowserver pid
+        pid = read_pid(flow_server_name.format(host.name)+".pid")
+
+        if pid:
+            log.debug('Killing Flow Server at host : {0}'.format(host.name))
+            time.sleep(0.05)
+            host.cmd('kill','-9', pid)
+
+        #we erase all the possible files created by the server
+        #pid file
+        del_file(flow_server_name.format(host.name)+".pid")
+        #udp unix socket server
+        del_file(udp_server_address.format(host.name))
+        #tcp unix socket server
+        del_file(tcp_server_address.format(host.name))
+
+    def restart_node(self,node):
+        self.stop_node(node)
+        self.start_node(node)
+
     def start(self):
         log.info('*** Starting Minigenerator Servers\n')
         for host in self.mininet.hosts:
-            cmd = flowserver_path+" {0} {1} {2} {3}".format(host.name,
-                                                            self._topology,
-                                                            self._send_funct,
-                                                            self._recv_funct)
-            #lunches flowserver
-            host.popen(cmd,stdout=sys.stdout, stderr=sys.stdout)
+            self.start_node(host.name)
 
     def stop(self):
         log.info('*** Stopping Minigenerator Servers\n')
-
-        client = UnixClient(udp_server_address)
-
         for host in self.mininet.hosts:
+            self.stop_node(host.name)
 
-            #send a termiante command so all the ongoing flows are gracefully
-            #sends a command to the server to kill it
-            client.send({"type":"softKill"},host.name)
-
-        time.sleep(0.5)
-        #in case that this does not work we try with the pid and kill -9
+    def restart(self):
+        log.info('*** Restarting Minigenerator Servers\n')
         for host in self.mininet.hosts:
-            #read flowserver pid
-            pid = read_pid(flow_server_name.format(host.name)+".pid")
+            self.restart_node(host.name)
 
-            if pid:
-                log.debug('Killing Flow Server at host : {0}'.format(host.name))
-                host.cmd('kill','-9', pid)
-
-            #we erase all the possible files created by the server
-            #pid file
-            del_file(flow_server_name.format(host.name)+".pid")
-            #udp unix socket server
-            del_file(udp_server_address.format(host.name))
-            #tcp unix socket server
-            del_file(tcp_server_address.format(host.name))
