@@ -58,8 +58,8 @@ def main():
 
     minigen.start()
 
-    CLI(net)
-    #MiniGeneratorCLI(net)
+    MiniGeneratorCLI(minigenerator=minigen,mininet=net)
+    #CLI(mininet=net)
 
     info("*** Stoping minigen and network\n")
     minigen.stop()

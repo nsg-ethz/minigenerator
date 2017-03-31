@@ -402,9 +402,6 @@ class Topology(TopologyDB):
 
 
 
-
-
-
 if __name__  == "__main__":
 
     topo = Topology(db="/tmp/minigenerator_topology")
