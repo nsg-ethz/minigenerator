@@ -121,6 +121,11 @@ class TopologyDB(object):
     def _add_node(self, n, props):
         """Register a network node"""
 
+        #does not add nodes that have inTopology set to false
+        if 'inTopology' in n.params:
+            if not n.params['inTopology']:
+                return
+
         interfaces_to_nodes = {}
 
         for itf in n.intfList():
@@ -518,6 +523,7 @@ class NetworkGraph(object):
         return [x for x in allEdges if not (any("sw" in s for s in x) or any("ovs" in s for s in x))]
 
 
+
 class Topology(TopologyDB):
     def __init__(self, loadNetworkGraph=True,hostsMappings=True, *args, **kwargs):
 
@@ -530,8 +536,12 @@ class Topology(TopologyDB):
 
         self.original_network = copy.deepcopy(self._network)
 
-        # if loadNetworkGraph:
-        #     self.networkGraph = NetworkGraph(self)
+        try:
+            if loadNetworkGraph:
+                self.networkGraph = NetworkGraph(self)
+        except:
+            import traceback
+            traceback.print_exc()
 
         #loads hosts to ip and ip to hosts mappings
         self.hostsIpMapping = {}
@@ -580,6 +590,7 @@ class Topology(TopologyDB):
             return ip
         raise HostDoesNotExist("Any host of the network has the name {0}".format(name))
 
+#tested
 
     def getNeighbors(self, node):
 
@@ -894,6 +905,9 @@ class Topology(TopologyDB):
         return self._network[node]["type"] == "switch" and node[:3] == "ovs"
 
 
+class NetworkGraphFatTree(NetworkGraph):
+
+    pass
 
 class FatTree(Topology):
 
@@ -905,9 +919,14 @@ class FatTree(Topology):
     core sw/router s/r_c(number) -> r_c0/s_c0
     """
 
-    def __init__(self):
-        pass
+    def __init__(self,*args,**kwargs):
+        super(FatTree,self).__init__(*args,**kwargs)
 
     def getPod(self, name):
 
         return name.split("_")[1]
+
+
+if __name__  == "__main__":
+
+    topo = Topology(db="/tmp/minigenerator_topology")
