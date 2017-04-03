@@ -231,7 +231,6 @@ class FatTree(Topology):
         :param host:
         :return:
         """
-
         if host not in self._network:
             raise HostDoesNotExist("{0} does not exist".format(host))
 
@@ -492,7 +491,6 @@ class FatTree(Topology):
         else:
             # should never happen
             return -1
-
 
     def getEdgeRouters(self):
 

@@ -12,12 +12,11 @@ from mininet.clean import cleanup
 class ExampleTopo(Topo):
 
     def build( self, **_opts ):
-
         #add linux bridges
         s1, s2, s3 = [ self.addSwitch( s,cls=LinuxBridge,stp=False) for s in ( 's1', 's2', 's3' ) ]
 
         #add 6 hosts (2 per switch)
-        h_11, h_12 = [self.addHost(name,inTopology=False) for name in ('h_11', 'h_12')]
+        h_11, h_12 = [self.addHost(name) for name in ('h_11', 'h_12')]
         h_21, h_22 = [self.addHost(name) for name in ('h_21', 'h_22')]
         h_31, h_32 = [self.addHost(name) for name in ('h_31', 'h_32')]
 

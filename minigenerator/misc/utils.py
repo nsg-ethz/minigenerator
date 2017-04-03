@@ -5,6 +5,13 @@ import os
 import threading
 import sys
 
+def is_ip(ip):
+    try:
+        socket.inet_aton(ip)
+        return True
+    except socket.error:
+        return False
+
 def read_pid(file_name):
     """
     Extract a pid from a file

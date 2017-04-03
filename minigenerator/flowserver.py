@@ -11,7 +11,7 @@ import Queue
 from minigenerator import udp_server_address, tcp_server_address, flow_server_name, topology_path
 from minigenerator.misc.unixsockets import UnixServer, UnixServerTCP
 from minigenerator.flowlib.tcp import recvFlowTCP
-from minigenerator.misc.utils import KThread
+from minigenerator.misc.utils import KThread, is_ip
 
 MAX_PORT = 2**16 -1
 
@@ -150,8 +150,15 @@ class FlowServer(object):
 
     def startFlow(self,flow):
 
-        #we add some extra parameters that can be useful to flow: (sender and receiver names)
-        flow.update({"dst_host_name": self._topology.getHostName(flow["dst"]), "src_host_name":self.name})
+        #convert from name to ip if flow[src] is a name, otherwise we convert from ip to name and store it in:
+        # src_host_name/dst_host_name
+        if is_ip(flow['src']):
+            flow.update({"dst_host_name": self._topology.getHostName(flow["dst"]), "src_host_name": self.name})
+        else:
+            flow.update({"dst_host_name": flow['dst'], "src_host_name": flow['src']})
+            flow['src'] = self._topology.getHostIp(flow['src'])
+            flow['dst'] = self._topology.getHostIp(flow['dst'])
+
 
         # start flow process
         process = multiprocessing.Process(target=self.send_funct, kwargs=(flow))
@@ -221,31 +228,38 @@ class FlowServer(object):
             # EVENTS LIST
             ############################################
 
-            if event["type"] == "terminate":
-                self.terminateALL()
+            if not "type" in event:
+                log.warning("Bad formatted event")
+                continue
 
-            elif event["type"] == "TCPServer":
-                self.startReceiveTCP(str(event["port"]))
+            try:
+                if event["type"] == "terminate":
+                    self.terminateALL()
 
-            elif event["type"] == "flow":
-                flow = event["data"]
+                elif event["type"] == "TCPServer":
+                    self.startReceiveTCP(str(event["port"]))
 
-                #Calls start flow function
-                self.startFlow(flow)
+                elif event["type"] == "flow":
+                    flow = event["data"]
 
-            elif event["type"] == "flowsBulck":
-                flows = event["data"]
-                startingTime = event["startingTime"]
+                    #Calls start flow function
+                    self.startFlow(flow)
 
-                #schedule all the flows
-                self.startFlowsBulck(flows,startingTime)
+                elif event["type"] == "flowsBulck":
+                    flows = event["data"]
+                    startingTime = event["startingTime"]
 
-            elif event["type"] == "softKill":
-                self.terminateALL()
-                self.clean_server()
+                    #schedule all the flows
+                    self.startFlowsBulck(flows,startingTime)
 
-            else:
-                log.warning("Unknown event {0}".format(event))
+                elif event["type"] == "softKill":
+                    self.terminateALL()
+                    self.clean_server()
+
+                else:
+                    log.warning("Unknown event {0}".format(event))
+            except:
+                traceback.print_exc()
 
 
 if __name__ == "__main__":

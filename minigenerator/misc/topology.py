@@ -391,6 +391,7 @@ class Topology(TopologyDB):
 
         return self.networkGraph.areNeighbors(n1, n2)
 
+
     def getRouters(self):
 
         "Gets the routers from the topologyDB"
@@ -406,8 +407,6 @@ class Topology(TopologyDB):
     def getSwitches(self):
 
         return {node: self._network[node] for node in self._network if self._network[node]["type"] == "switch"}
-
-
 
 
 if __name__  == "__main__":
