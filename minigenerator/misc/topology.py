@@ -69,7 +69,8 @@ class TopologyDB(object):
     def interface_bandwidth(self, x, y):
         """Return the bandwidth capacity of the interface on node x
         facing node y. If it is unlimited, return -1"""
-        return self._interface(x, y)['bw']
+        connected_to = self._network[x]["interfaces_to_node"][y]
+        return self._interface(x, connected_to)['bw']
 
     def subnet(self, x, y):
         """Return the subnet linking node x and y"""

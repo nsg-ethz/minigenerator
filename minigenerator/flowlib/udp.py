@@ -36,11 +36,14 @@ def sendRate(s,dst,dport,bytesPerSec,packetSize=None):
     time_step= 1/times
     start = time.time()
     i = 0
+
+    print bytesPerSec
     while bytesPerSec > minSizeUDP:
         bytesPerSec -= (s.sendto("A" * min(maxSize, bytesPerSec - minSizeUDP), (dst, dport)) + minSizeUDP)
         i +=1
         next_send_time = start + i * time_step
         time.sleep(max(0,next_send_time - time.time()))
+    print bytesPerSec
     print time.time()-start
     time.sleep(max(0,1-(time.time()-start)))
 

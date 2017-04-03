@@ -4,7 +4,7 @@ from minigenerator.misc.utils import setSizeToInt, send_msg
 import subprocess, os , signal
 minSizeTCP = 66
 
-def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",duration=0,**kwargs):
+def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",duration=0,**kwargs):
 
     totalSize = setSizeToInt(size)/8
     rate = setSizeToInt(rate)/8
@@ -38,8 +38,10 @@ def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",dur
 
         totalTime = int(duration)
 
-        #if total size is set to 0 the we use duration time and rate (which can be less than the maximum link rate)
-        if not totalSize:
+        #we use duration and rate to keep that rate for a given duration.
+        #NOTE if the flow gets congested it may last a little bit longer than duration (until it finishes one sending
+        #block)
+        if duration:
             startTime = time.time()
             i = 0
             time_step = 1
