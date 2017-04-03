@@ -146,6 +146,14 @@ class TopologyDB(object):
             if not nh:
                 continue  # Skip loopback and the likes
 
+            #do not create connection
+            if 'inTopology' in nh.node.params:
+                # import ipdb
+                # ipdb.set_trace()
+                if not nh.node.params['inTopology']:
+                    continue
+
+
             props[nh.node.name] = {
                 'ip': '%s/%s' % (itf.ip, itf.prefixLen),
                 'mac' : '%s' % (itf.mac),
