@@ -359,9 +359,14 @@ class Topology(TopologyDB):
         self.hostsIpMapping["ipToName"] = {}
         self.hostsIpMapping["nameToIp"] = {}
         for host in hosts:
-            ip = self.interfaceIP(host,"{0}-eth0".format(host))
+            ip = self.interfaceIP(host,self.getHostFirstInterface(host).format(host))
             self.hostsIpMapping["ipToName"][ip] = host
             self.hostsIpMapping["nameToIp"][host] = ip
+
+
+    def getHostFirstInterface(self,name):
+
+        return self._network[name]["interfaces_to_node"].keys()[0]
 
     def getHostName(self, ip):
 
