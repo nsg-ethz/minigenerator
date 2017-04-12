@@ -8,9 +8,7 @@ import pprint
 
 class TopologyDB(object):
     """A convenience store for auto-allocated mininet properties.
-    This is *NOT* to be used as IGP graph for a controller application,
-    use the graphs reported by the southbound controller instead.
-    
+
     Based on Olivie Tilmans TopologyDB from fibbing project:
     https://github.com/Fibbing/FibbingNode/blob/master/fibbingnode/misc/mininetlib/ipnet.py
     """
