@@ -3,7 +3,7 @@ from mininet.log import info, output, error
 from minigenerator.misc.unixsockets import UnixClient
 
 class MiniGeneratorCLI(CLI):
-    
+
     def __init__(self,minigenerator,*args,**kwargs):
 
         if minigenerator:
@@ -98,4 +98,3 @@ class MiniGeneratorCLI(CLI):
     #             router = self.mn[router_name]
     #             router.router.delete()
     #             router.router.start()
-
