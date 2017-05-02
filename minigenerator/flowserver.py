@@ -170,7 +170,7 @@ class FlowServer(object):
 
 
 
-    def startReceiveTCP(self,port):
+    def startReceive(self,port):
 
         """
         Starts a TCP server that waits until a single sender connects,
@@ -236,8 +236,8 @@ class FlowServer(object):
                 if event["type"] == "terminate":
                     self.terminateALL()
 
-                elif event["type"] == "TCPServer":
-                    self.startReceiveTCP(str(event["port"]))
+                elif event["type"] == "listenFlow":
+                    self.startReceive(str(event["port"]))
 
                 elif event["type"] == "flow":
                     flow = event["data"]

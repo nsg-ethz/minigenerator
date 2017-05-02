@@ -110,6 +110,7 @@ def recvFlowTCP(dport=5001,**kwargs):
         else:
             s.close()
 
+
 def receiveTCP_netcat(dport=5001,**kwargs):
     def signal_term_handler(signal,frame):
         p.kill()

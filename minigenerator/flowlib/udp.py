@@ -108,3 +108,6 @@ def sendFlowUDP(dst="10.0.32.2",sport=5000,rate='10M',dport=5001,duration=10,**k
 
     finally:
         s.close()
+
+def recvFlowUDP(*args,**kwargs):
+    pass

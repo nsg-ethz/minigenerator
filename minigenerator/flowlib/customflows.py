@@ -4,18 +4,18 @@ import traceback
 import copy
 from minigenerator.misc.unixsockets import UnixClient, UnixClientTCP
 from minigenerator.flowlib.tcp import sendFlowTCP, recvFlowTCP
-from minigenerator.flowlib.udp import sendFlowUDP
+from minigenerator.flowlib.udp import sendFlowUDP, recvFlowUDP
 from minigenerator.misc.utils import isTCP, isUDP
 from minigenerator import udp_server_address, evaluation_path
 
 
 #starting tcp server function
-def startTCPServer(host, dport):
+def startServer(host, dport,proto):
     flowClient = UnixClient(udp_server_address)
-    flowClient.send({"type": "TCPServer", "port": dport}, host)
+    flowClient.send({"type": "listenFlow","proto":proto, "port": dport}, host)
 
 # starting tcp server thread
-class StartTCPServerThread(threading.Thread):
+class StartServerThread(threading.Thread):
     def __init__(self, tcp_data):
         super(StartTCPServerThread, self).__init__()
         self.tcp_data = tcp_data
@@ -23,22 +23,27 @@ class StartTCPServerThread(threading.Thread):
     def run(self):
         # sends command to the receiver flow server so it starts a TCP server to listen for the tcp flow.
         flowClient = UnixClient(udp_server_address)
-        flowClient.send({"type": "TCPServer", "port": self.tcp_data["dport"]}, self.tcp_data["host"])
+        flowClient.send({"type": "listenFlow", "port": self.tcp_data["dport"],"proto":self.tcp_data["proto"]}, self.tcp_data["host"])
 
 
-def sendFlowTCP_withServer(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",duration=0,dst_host_name="h_0_0",**kwargs):
+def sendFlow_withServer(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="0M",duration=0,dst_host_name="h_0_0",**kwargs):
 
     #start_server
     now = time.time()
 
-    tcp_data = {"host":dst_host_name, "dport":dport}
-    tcp_thread = StartTCPServerThread(tcp_data)
+    proto = kwargs.get("proto","tcp")
+
+    tcp_data = {"host":dst_host_name, "dport":dport, "proto": proto}
+    tcp_thread = StartServerThread(tcp_data)
     tcp_thread.setDaemon(True)
     tcp_thread.start()
     time.sleep(max(0, 1 - (time.time() - now)))
 
     #start flow
-    sendFlowTCP(dst=dst,sport=sport,dport=dport,size =size,rate=rate,duration=duration,**kwargs)
+    if isTCP(kwargs):
+        sendFlowTCP(dst=dst,sport=sport,dport=dport,size =size,rate=rate,duration=duration,**kwargs)
+    elif isUDP(kwargs):
+        sendFlowUDP(dst=dst,sport=sport,dport=dport,rate=rate,duration=duration,**kwargs)
 
 
 def store_duration(function):
@@ -76,12 +81,13 @@ def send_flow(dst_host_name,**flow):
         # and do the traceroute much earlier than before, even before notifying the flow to the controller.
         if isTCP(flow):
             tcp_data = {"host": dst_host_name, "dport": flow["dport"]}
-            startTCPServer(**tcp_data)
+            startServer(**tcp_data)
             # give time to the server to start listening
             time.sleep(1)
 
         if isUDP(flow):
-
+            data = {"host": dst_host_name, "dport": flow["dport"],"proto":flow["proto"]}
+            startServer(**data)
             sendFlowUDP(**flow)
 
         elif isTCP(flow):
@@ -135,7 +141,11 @@ def send_flow_store_duration(dst_host_name,**flow):
         pass
 
 def recv_flow(*args,**kwargs):
-    recvFlowTCP(*args,**kwargs)
+
+    if isTCP(kwargs):
+        recvFlowTCP(*args,**kwargs)
+    elif isUDP(kwargs):
+        recvFlowUDP(*args,**kwargs)
 
 
 
