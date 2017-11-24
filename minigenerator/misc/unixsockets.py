@@ -28,7 +28,7 @@ class UnixClientTCP(object):
         self.connected_server = ""
         self.sock.close()
 
-    def connect(self,server):
+    def connect(self,server = ""):
 
         if not self.connected_server:
             self.createSocket()
@@ -40,7 +40,7 @@ class UnixClientTCP(object):
             self.connect(server)
 
 
-    def send(self,msg,server):
+    def send(self,msg,server = ""):
 
         reconnections = 3
         while reconnections:
@@ -142,7 +142,7 @@ class UnixClient(object):
         self.sock.close()
 
 
-    def send(self,m,server):
+    def send(self,m,server = ""):
         try:
             self.sock.sendto(pickle.dumps(m),self.server_address_base.format(server))
         except socket.error as serr:

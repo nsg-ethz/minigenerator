@@ -23,3 +23,4 @@ ilt_*
 *.egg
 .cache
 .eggs
+.DS_Store
