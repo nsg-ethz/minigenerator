@@ -4,6 +4,7 @@ from minigenerator.misc.utils import setSizeToInt, send_msg
 import subprocess, os , signal
 minSizeTCP = 66
 
+
 def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",duration=0,**kwargs):
 
     totalSize = setSizeToInt(size)/8
@@ -18,7 +19,10 @@ def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",du
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1500)
+
     s.bind(('', sport))
+
+
     try:
         reconnections = 5
         while reconnections:
@@ -33,8 +37,6 @@ def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",du
         #could not connect to the server
         if reconnections == 0:
             return
-
-
 
         totalTime = int(duration)
 

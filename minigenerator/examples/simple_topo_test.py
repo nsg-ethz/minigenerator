@@ -40,7 +40,6 @@ class ExampleTopo(Topo):
 
 def main():
 
-
     cleanup()
 
     topo = ExampleTopo()
