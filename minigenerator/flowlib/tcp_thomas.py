@@ -1,18 +1,10 @@
 import socket
 import time
-from minigenerator.misc.utils import setSizeToInt, send_msg
+from minigenerator.misc.utils import send_msg
 import subprocess, os , signal
-minSizeTCP = 66
 
+def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,duration=10,**kwargs):
 
-def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",duration=0,**kwargs):
-
-    totalSize = setSizeToInt(size)/8
-    rate = setSizeToInt(rate)/8
-    headers_overhead = minSizeTCP * (rate / 4096)
-    headers_overhead_total = minSizeTCP * (totalSize / 4096)
-    rate = rate - (headers_overhead)
-    totalSize = totalSize - (headers_overhead_total)
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -21,7 +13,6 @@ def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",du
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1500)
 
     s.bind(('', sport))
-
 
     try:
         reconnections = 5
@@ -40,40 +31,13 @@ def sendFlowTCP(dst="10.0.32.3",sport=5000,dport=5001,size = "10M",rate="10M",du
 
         totalTime = int(duration)
 
-        #we use duration and rate to keep that rate for a given duration.
-        #NOTE if the flow gets congested it may last a little bit longer than duration (until it finishes one sending
-        #block)
-        if duration:
-            startTime = time.time()
-            i = 0
-            time_step = 1
-            while (time.time() - startTime <= totalTime):
-                send_msg(s,"A"*rate)
-                i +=1
-                next_send_time = startTime + i * time_step
-                time.sleep(max(0,next_send_time - time.time()))
-                #print time.time()-startTime
-
-
-        # IMPORTANT NOTE: instead of pushing bytes into the socket every second, you can use socket.sendall(totalsize)
-        # however that drastically increases CPU usage at the time of running the send command, something we want to avoid
-        # since multiple hosts could be creating flows in parallel (if we emulate them in the same machine) causing problems
-        # to other applications.
-
-
-        #we send the size in bytes at the rate rate as maximum
-        else:
-            startTime = time.time()
-            i = 0
-            time_step = 1
-            while (totalSize > minSizeTCP):
-                rate = min(rate, totalSize - minSizeTCP)
-                send_msg(s,"A"*rate)
-                totalSize -= rate
-                i +=1
-                next_send_time = startTime + i * time_step
-                time.sleep(max(0,next_send_time - time.time()))
-            #print "flow duration {0}, src: {1}:{2}, dst {3}:{4} with size: {5}".format(time.time()-startTime,kwargs["src"],dst,sport,dport,size)
+        startTime = time.time()
+        i = 0
+        while (time.time() - startTime <= totalTime):
+            send_msg(s,"A"*1444)
+            i +=1
+            next_send_time = startTime + i * inter_packet_delay
+            time.sleep(max(0,next_send_time - time.time()))
 
     except socket.error:
         pass
@@ -95,6 +59,7 @@ def recvFlowTCP(dport=5001,**kwargs):
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
     s.bind(("", dport))
     s.listen(1)
     conn = ''
@@ -123,5 +88,3 @@ def receiveTCP_netcat(dport=5001,**kwargs):
 
     p = subprocess.Popen(["nc", "-l", str(dport)], stdout=open(os.devnull, "w"))
     p.wait()
-
-
