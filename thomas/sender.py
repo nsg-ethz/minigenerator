@@ -11,7 +11,7 @@ for flow_id in range(100, 1000):
                      "dport": 5000+flow_id,
                      "sport": 6000+flow_id,
                      "inter_packet_delay":uniform(1, 5),
-                     "duration": 40}
+                     "duration": 60}
 
     print flow_template
 
@@ -28,7 +28,7 @@ for flow_id in range(0, 100):
                      "dport": 5000+flow_id,
                      "sport": 6000+flow_id,
                      "inter_packet_delay":0.2,
-                     "duration": 40}
+                     "duration": 60}
 
     print flow_template
 

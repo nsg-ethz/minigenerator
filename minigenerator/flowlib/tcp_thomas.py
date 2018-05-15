@@ -34,7 +34,7 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
         startTime = time.time()
         i = 0
         while (time.time() - startTime <= totalTime):
-            send_msg(s,"A"*1444)
+            send_msg(s,"A"*100)
             i +=1
             next_send_time = startTime + i * inter_packet_delay
             time.sleep(max(0,next_send_time - time.time()))
