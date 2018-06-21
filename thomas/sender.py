@@ -7,7 +7,7 @@ process_list = []
 # Create 900 flows with an inter packet delay of 2s
 for flow_id in range(100, 1000):
 
-    flow_template = {"dst": '8.0.0.2',
+    flow_template = {"dst": '127.0.0.1',
                      "dport": 5000+flow_id,
                      "sport": 6000+flow_id,
                      "inter_packet_delay":uniform(1, 5),
@@ -24,7 +24,7 @@ for flow_id in range(100, 1000):
 # Create 100 flows with an inter packet delay of 0.2s
 for flow_id in range(0, 100):
 
-    flow_template = {"dst": '8.0.0.2',
+    flow_template = {"dst": '127.0.0.1',
                      "dport": 5000+flow_id,
                      "sport": 6000+flow_id,
                      "inter_packet_delay":uniform(0.05, 0.4),

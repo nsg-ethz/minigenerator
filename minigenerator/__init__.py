@@ -1,7 +1,7 @@
 """
 Mininet has to be installed to use this module
 """
-try:
+"""try:
     import mininet
 except ImportError as e:
     import sys
@@ -10,7 +10,7 @@ except ImportError as e:
                      'installed.\n'
                      'Visit www.mininet.org to learn how to do so.\n')
     sys.exit(1)
-
+"""
 
 import os
 import ConfigParser
