@@ -3,13 +3,13 @@ import time
 from minigenerator.misc.utils import send_msg
 import subprocess, os , signal
 
-def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,duration=10,**kwargs):
+def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,duration=10,pkt_len=1,**kwargs):
 
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1500)
 
     s.bind(('', sport))
@@ -34,8 +34,10 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
         startTime = time.time()
         i = 0
         while (time.time() - startTime <= totalTime):
-            send_msg(s,"A"*100)
-            i +=1
+            send_msg(s,"A"*pkt_len)
+            i += 1
+            #if i%3 == 0:
+            #    inter_packet_delay = 0.22
             next_send_time = startTime + i * inter_packet_delay
             time.sleep(max(0,next_send_time - time.time()))
 

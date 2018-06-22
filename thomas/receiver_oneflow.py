@@ -5,7 +5,7 @@ process_list = []
 
 for flow_id in range(0, 1):
 
-    flow_template = {"dport":5000+flow_id}
+    flow_template = {"dport":5500+flow_id}
 
     process = multiprocessing.Process(target=recvFlowTCP, kwargs=flow_template)
     process.daemon = True
