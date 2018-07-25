@@ -29,7 +29,7 @@ if exp_nb == 1:
     for p in process_list:
         p.join()
 
-elif exp_nb == 2
+elif exp_nb == 2:
     process_list = []
 
     for flow_id in range(0, 1):
