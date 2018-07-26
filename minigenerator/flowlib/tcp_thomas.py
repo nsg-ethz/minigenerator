@@ -14,7 +14,9 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
     #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1500)
 
     inter_packet_delay_after = inter_packet_delay
+    pkt_len_after = pkt_len
     inter_packet_delay = 0.02
+    pkt_len = 1500
 
     s.bind(('', sport))
 
@@ -47,6 +49,7 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
                 startTime = time.time()
                 i = 1
                 inter_packet_delay = inter_packet_delay_after
+                pkt_len = pkt_len_after
                 #pkt_len = 10
                 print 'Flow changed!'
 
