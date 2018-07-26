@@ -18,7 +18,7 @@ if exp_nb == 1:
                          "sport": 6000+flow_id,
                          "inter_packet_delay":0.2,
                          "duration":60,
-                         "pkt_len":100}
+                         "pkt_len":1500}
 
         process = multiprocessing.Process(target=sendFlowTCP, kwargs=flow_template)
         process.daemon = True
@@ -37,9 +37,9 @@ elif exp_nb == 2:
         flow_template = {"dst": '192.168.122.166',
                          "dport": 5500+flow_id,
                          "sport": 6000+flow_id,
-                         "inter_packet_delay":0.4,
+                         "inter_packet_delay":0.55,
                          "duration":60,
-                         "pkt_len":100}
+                         "pkt_len":1500}
 
         process = multiprocessing.Process(target=sendFlowTCP, kwargs=flow_template)
         process.daemon = True
