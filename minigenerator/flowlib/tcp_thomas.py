@@ -10,7 +10,7 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1500)
 
     inter_packet_delay_after = inter_packet_delay
