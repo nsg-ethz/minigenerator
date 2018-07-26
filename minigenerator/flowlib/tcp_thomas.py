@@ -76,6 +76,8 @@ def recvFlowTCP(dport=5001,**kwargs):
     connection_ts = None
     print 'run: iptables -F'
     os.system('iptables -F')
+    print 'run: tc qdisc add dev ens3 root netem delay 300ms'
+    os.system('tc qdisc add dev ens3 root netem delay 300ms')
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
