@@ -9,6 +9,7 @@ args = parser.parse_args()
 exp_nb = args.exp_nb
 
 if exp_nb == 1:
+    print 'EXP 1'
     process_list = []
 
     for flow_id in range(0, 1):
@@ -30,6 +31,7 @@ if exp_nb == 1:
         p.join()
 
 elif exp_nb == 2:
+    print 'EXP 2'
     process_list = []
 
     for flow_id in range(0, 1):
@@ -37,7 +39,7 @@ elif exp_nb == 2:
         flow_template = {"dst": '192.168.122.166',
                          "dport": 5500+flow_id,
                          "sport": 6000+flow_id,
-                         "inter_packet_delay":0.55,
+                         "inter_packet_delay":0.6,
                          "duration":60,
                          "pkt_len":1500}
 

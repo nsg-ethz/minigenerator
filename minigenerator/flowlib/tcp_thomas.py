@@ -37,6 +37,7 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
 
         totalTime = int(duration)
 
+        print 'inter packet delay after: ', inter_packet_delay_after
         startTime = time.time()
         real_startTime = time.time()
         i = 0
