@@ -76,8 +76,8 @@ def recvFlowTCP(dport=5001,**kwargs):
     connection_ts = None
     print 'run: iptables -F'
     os.system('iptables -F')
-    print 'run: tc qdisc add dev ens3 root netem delay 300ms'
-    os.system('tc qdisc add dev ens3 root netem delay 300ms')
+    print 'run: tc qdisc add dev ens3 root netem delay 200ms'
+    os.system('tc qdisc add dev ens3 root netem delay 200ms')
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -97,6 +97,9 @@ def recvFlowTCP(dport=5001,**kwargs):
             if time.time() - connection_ts > 32:
                 print 'run: iptables -A INPUT -p tcp -s 192.168.122.165 -j DROP'
                 os.system('iptables -A INPUT -p tcp -s 192.168.122.165 -j DROP')
+                print 'run: iptables -A INPUT -p tcp -s 192.168.122.166 -j DROP'
+                os.system('iptables -A INPUT -p tcp -s 192.168.122.166 -j DROP')
+
                 print 'failure ts: ', time.time()
 
             #data = recv_msg(conn)#conn.recv(1024)
