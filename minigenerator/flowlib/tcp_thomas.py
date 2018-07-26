@@ -97,8 +97,8 @@ def recvFlowTCP(dport=5001,**kwargs):
             if time.time() - connection_ts > 32:
                 print 'run: iptables -A INPUT -p tcp -s 192.168.122.165 -j DROP'
                 os.system('iptables -A INPUT -p tcp -s 192.168.122.165 -j DROP')
-                print 'run: iptables -A INPUT -p tcp -sport 5501 -j DROP'
-                os.system('iptables -A INPUT -p tcp -sport 5501 -j DROP')
+                print 'run: iptables -A INPUT -p tcp -d 192.168.122.165 -j DROP'
+                os.system('iptables -A INPUT -p tcp -d 192.168.122.165 -j DROP')
 
                 print 'failure ts: ', time.time()
 
