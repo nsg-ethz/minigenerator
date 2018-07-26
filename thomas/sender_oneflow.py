@@ -13,7 +13,7 @@ if exp_nb == 1:
 
     for flow_id in range(0, 1):
 
-        flow_template = {"dst": '192.168.56.101',
+        flow_template = {"dst": '192.168.122.166',
                          "dport": 5500+flow_id,
                          "sport": 6000+flow_id,
                          "inter_packet_delay":0.2,
@@ -34,7 +34,7 @@ elif exp_nb == 2:
 
     for flow_id in range(0, 1):
 
-        flow_template = {"dst": '192.168.56.101',
+        flow_template = {"dst": '192.168.122.166',
                          "dport": 5500+flow_id,
                          "sport": 6000+flow_id,
                          "inter_packet_delay":0.4,
