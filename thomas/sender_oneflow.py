@@ -16,7 +16,7 @@ if exp_nb == 1:
         flow_template = {"dst": '192.168.56.101',
                          "dport": 5500+flow_id,
                          "sport": 6000+flow_id,
-                         "inter_packet_delay":0.02,
+                         "inter_packet_delay":0.2,
                          "duration":60,
                          "pkt_len":1500}
 
@@ -37,7 +37,7 @@ elif exp_nb == 2:
         flow_template = {"dst": '192.168.56.101',
                          "dport": 5500+flow_id,
                          "sport": 6000+flow_id,
-                         "inter_packet_delay":0.04,
+                         "inter_packet_delay":0.4,
                          "duration":60,
                          "pkt_len":1500}
 
