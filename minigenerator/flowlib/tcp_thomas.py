@@ -12,6 +12,9 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_MAXSEG, 1500)
 
+    inter_packet_delay_after = inter_packet_delay
+    inter_packet_delay = 0.02
+
     s.bind(('', sport))
 
     try:
@@ -40,12 +43,12 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
             #    inter_packet_delay = 0.22
 
             ## Un comment here to change the behavior of the flow after 30s
-            # if time.time() - startTime > 30:
-            #     startTime = time.time()
-            #     i = 1
-            #     inter_packet_delay = 0.2
-            #     pkt_len = 10
-            #     print 'Flow changed!'
+            if time.time() - startTime > 30:
+                startTime = time.time()
+                i = 1
+                inter_packet_delay = inter_packet_delay_after
+                #pkt_len = 10
+                print 'Flow changed!'
 
             next_send_time = startTime + i * inter_packet_delay
             time.sleep(max(0,next_send_time - time.time()))
