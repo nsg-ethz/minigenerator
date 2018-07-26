@@ -2,6 +2,7 @@ import socket
 import time
 from minigenerator.misc.utils import send_msg
 import subprocess, os , signal
+import os
 
 def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,duration=10,pkt_len=1,**kwargs):
 
@@ -35,12 +36,11 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
         totalTime = int(duration)
 
         startTime = time.time()
+        real_startTime = time.time()
         i = 0
-        while (time.time() - startTime <= totalTime):
+        while (time.time() - real_startTime <= totalTime):
             send_msg(s,"A"*pkt_len)
             i += 1
-            #if i%3 == 0:
-            #    inter_packet_delay = 0.22
 
             ## Un comment here to change the behavior of the flow after 30s
             if time.time() - startTime > 30:
@@ -69,6 +69,11 @@ def recvFlowTCP(dport=5001,**kwargs):
     :return:
     """
 
+    # First clean up the iptables rule
+    connection_ts = None
+    print 'run: iptables -F'
+    os.system('iptables -F')
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -80,7 +85,15 @@ def recvFlowTCP(dport=5001,**kwargs):
     buffer = bytearray(4096)
     try:
         conn, addr = s.accept()
+        if connection_ts is None:
+            connection_ts = time.time()
+            print 'connection ts: ', connection_ts
         while True:
+            if time.time() - connection_ts > 32:
+                print 'run: iptables -A INPUT -p tcp -s 192.168.122.165 -j DROP'
+                os.system('iptables -A INPUT -p tcp -s 192.168.122.165 -j DROP')
+                print 'failure ts: ', time.time()
+
             #data = recv_msg(conn)#conn.recv(1024)
             if not conn.recv_into(buffer,4096):
                 break
