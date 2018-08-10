@@ -18,8 +18,8 @@ if exp_nb == 1:
 
 
     flow_template = {"dst": '192.168.122.166',
-                     "dport": sport,
-                     "sport": dport,
+                     "dport": dport,
+                     "sport": sport,
                      "inter_packet_delay":0.2,
                      "duration":60,
                      "pkt_len":1400}
@@ -38,8 +38,8 @@ elif exp_nb == 2:
     process_list = []
 
     flow_template = {"dst": '192.168.122.166',
-                     "dport": sport,
-                     "sport": dport,
+                     "dport": dport,
+                     "sport": sport,
                      "inter_packet_delay":0.5,
                      "duration":60,
                      "pkt_len":1400}
