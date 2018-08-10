@@ -40,7 +40,7 @@ elif exp_nb == 2:
     flow_template = {"dst": '192.168.122.166',
                      "dport": dport,
                      "sport": sport,
-                     "inter_packet_delay":0.5,
+                     "inter_packet_delay":0.6,
                      "duration":60,
                      "pkt_len":1400}
 
