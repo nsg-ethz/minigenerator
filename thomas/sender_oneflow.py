@@ -4,9 +4,9 @@ from random import  uniform
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument('exp_nb', type=int, help='Tell which experiment to run')
 parser.add_argument('sport', type=int, help='sport')
 parser.add_argument('dport', type=int, help='dport')
-parser.add_argument('exp_nb', type=int, help='Tell which experiment to run')
 args = parser.parse_args()
 sport = args.sport
 dport = args.dport
