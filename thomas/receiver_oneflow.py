@@ -1,3 +1,4 @@
+import time
 from minigenerator.flowlib.tcp_thomas import recvFlowTCP
 import multiprocessing
 
@@ -15,5 +16,7 @@ for flow_id in range(0, 1):
 
     process_list.append(process)
 
+time.sleep(100)
+
 for p in process_list:
-    p.join()
+    p.terminate()
