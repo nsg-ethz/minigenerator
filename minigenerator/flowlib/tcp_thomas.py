@@ -85,7 +85,7 @@ def recvFlowTCP(dport=5001,**kwargs):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    #s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
     s.bind(("", dport))
     s.listen(1)
