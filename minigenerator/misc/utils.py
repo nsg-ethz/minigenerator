@@ -52,7 +52,9 @@ def setSizeToInt(size):
 #Helpers to send big packets
 def send_msg(sock, msg):
 
+    print 'first :', len(struct.pack('>I', len(msg)))
     msg = struct.pack('>I', len(msg)) + msg
+    print len(msg)
     sock.sendall(msg)
 
 def recv_msg(sock):
