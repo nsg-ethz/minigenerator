@@ -18,7 +18,7 @@ def sendFlowTCP(dst='8.0.0.2',dport=5001,sport=6000,inter_packet_delay=0.2,durat
     inter_packet_delay = 0.02
     pkt_len = 1400
 
-    #s.bind(('', sport))
+    s.bind(('', sport))
 
     try:
         reconnections = 5
